@@ -5,27 +5,28 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class SimpleShell {
+public class Shell {
     public static void main(String[] args) throws java.io.IOException, InterruptedException {
         String commandLine;
         BufferedReader console = new BufferedReader(new InputStreamReader((System.in)));
         File nowDir = new File(System.getProperty("user.dir"));
         ArrayList<String> history = new ArrayList<>();
-        String hiscmd = "";
-        boolean hischeck = false;
 
         //we break out witn <control><c>
         while (true) {
             try {
                 //read what the user entered
-                if(hischeck){
-                    System.out.print("jsh>");
-                    System.out.println(hiscmd);
-                    commandLine = hiscmd;
-                    hischeck = false;
-                }else{
-                    System.out.print("jsh>");
-                    commandLine = console.readLine();
+                System.out.print("jsh>");
+                commandLine = console.readLine();
+
+                //if the user entered a return, just loop again
+                if (commandLine.equals(""))
+                    continue;
+
+                //shell 탈출하기
+                if (commandLine.equals("exit") || commandLine.equals("quit")) {
+                    System.out.println("Goodbye");
+                    System.exit(0);
                 }
 
                 //inputArr 만들기
@@ -37,16 +38,6 @@ public class SimpleShell {
                     history.add(commandLine);
                 } else if (!commandLine.equals(history.get(history.size() - 1))) {
                     history.add(commandLine);
-                }
-
-                //if the user entered a return, just loop again
-                if (commandLine.equals(""))
-                    continue;
-
-                //shell 탈출하기
-                if (commandLine.equals("exit") || commandLine.equals("quit")) {
-                    System.out.println("Goodbye");
-                    System.exit(0);
                 }
 
                 //현재 dir에 있는 파일&폴더 출력
@@ -83,45 +74,40 @@ public class SimpleShell {
                     ProcessBuilder pb = new ProcessBuilder(inputArr);
                     pb.directory(nowDir);
                     //cd / ;루트
-                    if (inputArr.get(1).equals("/")) {
-                        pb.directory(new File("/"));
-                        nowDir = new File("/");
+                    if (inputArr.get(1).equals("\\")) {
+                        pb.directory(new File("\\"));
+                        nowDir = new File("\\");
                         // System.out.println(pb.directory().toString());
                         continue;
                     }//cd 절대경로
-                    else if (inputArr.get(1).startsWith("/")) {
+                    else if (inputArr.get(1).startsWith("\\")) {
                         String Path = inputArr.get(1);
                         pb.directory(new File(Path));
                         nowDir = new File(Path);
                         //System.out.println(pb.directory().toString());
                     }// cd 상대경로 -> ./Project1
-                    else if (inputArr.get(1).startsWith("./")) {
+                    else if (inputArr.get(1).startsWith(".\\")) {
                         //현재 경로
-                        if (inputArr.get(1).equals("./")) continue;
+                        if (inputArr.get(1).equals(".\\")) continue;
                             //현재 폴더의 상대경로
                         else {
-                            String Path = pb.directory().toString() + "/" + inputArr.get(1).replace("./", "");
+                            String Path = pb.directory().toString() + "\\" + inputArr.get(1).replace(".\\", "");
                             pb.directory(new File(Path));
                             nowDir = new File(Path);
                         }
                     }
                     //cd .. ;상위 폴더로 이동
-                    else if (inputArr.get(1).equals("..") || inputArr.get(1).equals("../")) {
+                    else if (inputArr.get(1).equals("..") || inputArr.get(1).equals("..\\")) {
                         File parentPath = pb.directory().getParentFile();
                         pb.directory(parentPath);
                         nowDir = parentPath;
                         // System.out.println(pb.directory().toString());
                         continue;
                     }
-                    //cd ../ITM
-                    else if (inputArr.get(1).startsWith("../")) {
+                    //cd ../../ITM
+                    else if (inputArr.get(1).startsWith("..\\")) {
                         while (true) {
-                            File parentPath = pb.directory().getParentFile();
-                            File Path = new File(parentPath.toString() + inputArr.get(1).replace("../", ""));
-                            pb.directory(Path);
-                            nowDir = Path;
-                            // System.out.println(pb.directory().toString());
-                            continue;
+
 
                         }
                     }
@@ -158,21 +144,23 @@ public class SimpleShell {
                     } else {
                         //history number
                         if (inputArr.get(1).matches("[+-]?\\d*(\\.\\d+)?")) {
-                            int idx = Integer.parseInt(inputArr.get(1));
-                            System.out.println(idx + " " + history.get(idx));
+                            for (int i = 0; i < history.size(); i++) {
+                                if (inputArr.get(1).equals((i+1)))
+                                System.out.println(i + 1 + " " + history.get(i));
+                            }
                         }
                         //history !number
                         if (inputArr.get(1).matches("![+-]?\\d*(\\.\\d+)?")) {
-                            hischeck = true;
-                            hiscmd = history.get(Integer.parseInt(inputArr.get(1).replace("!", ""))- 1);
+
                         }
-                        //history !!
-                        if (inputArr.get(1).equals("!!")) {
-                            hischeck = true;
-                            hiscmd = history.get(history.size() - 2);
+                        //history !!number
+                        if (inputArr.get(1).matches("!![+-]?\\d*(\\.\\d+)?")) {
+
                         }
+
                     }
                 }
+
             }catch (Exception e){
                 System.out.println(e.toString());
                 System.out.println("Please check the command!");
